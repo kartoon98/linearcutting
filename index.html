@@ -69,7 +69,7 @@ input[type="number"]:focus { outline: none; border: 2px solid #000; }
 .m-table th { height: 62px; }
 .unplaced, .unplaced b { color: #e00000; }
 .paste-fix {}
-#pasteBox { width: 100%; padding: 10px 12px; border: 1px solid #000; border-radius: 0; font-family: inherit; font-size: 19px; color: #000; background: #fff; resize: vertical; margin-bottom: 16px; }
+#pasteBox { width: 100%; padding: 10px 12px; border: 1px solid #000; border-radius: 0; font-family: inherit; font-size: 19px; color: #000; background: #fff; resize: vertical; margin-bottom: 28px; }
 #pasteBox:focus { outline: none; border: 2px solid #000; }
 .card.warning { border: 2px solid #e00000; color: #000; font-size: 19px; }
 .top-bar { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
@@ -77,18 +77,32 @@ input[type="number"]:focus { outline: none; border: 2px solid #000; }
 .lang-btn { padding: 8px 16px; background: #fff; color: #000; border: 1px solid #000; border-radius: 0; font-size: 23px; cursor: pointer; }
 .lang-btn + .lang-btn { margin-left: -1px; }
 .lang-btn.active { background: #000; color: #fff; }
+.top-actions { display: flex; align-items: center; gap: 16px; flex-shrink: 0; margin-top: 6px; }
+.top-actions .lang-switch { margin-top: 0; }
+input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid #000; border-radius: 0; font-size: 26px; font-weight: 600; color: #000; background: #fff; font-family: inherit; }
+input[type="text"]:focus { outline: none; border: 2px solid #000; }
+.part-head-wrap { position: relative; }
+.part-head-wrap .btn-add { position: absolute; right: 0; bottom: 6px; }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="top-bar">
     <h1 data-i18n="title">Линейный раскрой материалов</h1>
-    <div class="lang-switch">
-      <button class="lang-btn" data-lang="ru">RU</button>
-      <button class="lang-btn" data-lang="en">EN</button>
+    <div class="top-actions">
+      <button class="btn-add" id="btnClear" data-i18n="clear">Очистить</button>
+      <div class="lang-switch">
+        <button class="lang-btn" data-lang="ru">RU</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
     </div>
   </div>
   <p class="subtitle" data-i18n="subtitle">Введите параметры и нажмите «Рассчитать раскрой»</p>
+
+  <div class="card">
+    <label data-i18n="materialName">Наименование материала</label>
+    <input type="text" id="materialName" autocomplete="off">
+  </div>
 
   <div class="card">
     <div class="header-flex">
@@ -101,14 +115,16 @@ input[type="number"]:focus { outline: none; border: 2px solid #000; }
   <div class="card">
     <div class="header-flex">
       <h3 data-i18n="partsTitle">Детали для раскроя</h3>
-      <button class="btn-add" id="btnAddPart" data-i18n="addPart">+ Деталь</button>
     </div>
     <div class="header-flex" style="margin-bottom: 8px;">
       <label style="margin: 0;" data-i18n="pasteLabel">Вставка из таблицы (Поз. / Длина / Кол-во)</label>
       <button class="btn-add" id="btnFillParts" data-i18n="fill">Заполнить</button>
     </div>
     <textarea id="pasteBox" rows="4" data-i18n-ph="pastePh" placeholder="Вставьте сюда строки из Excel: Поз. Длина Кол-во"></textarea>
-    <div class="part-head"><span data-i18n="hPos">Поз.</span><span data-i18n="hLen">Длина, мм</span><span data-i18n="hQty">Кол-во, шт</span><span></span></div>
+    <div class="part-head-wrap">
+      <div class="part-head"><span data-i18n="hPos">Поз.</span><span data-i18n="hLen">Длина, мм</span><span data-i18n="hQty">Кол-во, шт</span><span></span></div>
+      <button class="btn-add" id="btnAddPart" data-i18n="addPart">+ Деталь</button>
+    </div>
     <div id="partsTable"></div>
   </div>
 
@@ -133,6 +149,7 @@ var lastKerf = 0;
 
 var I18N = {
   ru: {
+    clear: 'Очистить', materialName: 'Наименование материала',
     title: 'Линейный раскрой материалов',
     subtitle: 'Введите параметры и нажмите «Рассчитать раскрой»',
     stocksTitle: 'Заготовки (разные длины)', addStock: '+ Заготовка',
@@ -157,6 +174,7 @@ var I18N = {
     scheme: 'Схема раскроя – {len} мм', exportBtn: '⬇ Скачать DXF'
   },
   en: {
+    clear: 'Clear', materialName: 'Material name',
     title: 'Linear cutting of materials',
     subtitle: 'Enter the parameters and press “Calculate cutting”',
     stocksTitle: 'Stock pieces (various lengths)', addStock: '+ Stock',
@@ -243,6 +261,24 @@ function addPartRow(len, qty, pos) {
   row.querySelector('.btn-remove').onclick = function() { row.remove(); renumberParts(); };
   if (pos !== undefined && pos !== null) row.querySelector('.pos-cell').textContent = pos;
   else renumberParts();
+}
+
+function dxfFileName() {
+  var name = (document.getElementById('materialName').value || '').trim();
+  name = name.replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').replace(/[. ]+$/, function(m) { return m.replace(/./g, '_'); });
+  if (name.length > 120) name = name.slice(0, 120);
+  return (name || 'cutting_map') + '.dxf';
+}
+
+function clearAll() {
+  document.getElementById('materialName').value = '';
+  document.getElementById('stocksTable').innerHTML = '';
+  document.getElementById('partsTable').innerHTML = '';
+  document.getElementById('pasteBox').value = '';
+  document.getElementById('results').innerHTML = '';
+  lastPatterns = [];
+  addStockRow();
+  addPartRow();
 }
 
 function exportDXF() {
@@ -332,6 +368,15 @@ function exportDXF() {
       '72', al, '11', px, '21', py, '31', 0, '73', 2);
   }
 
+  // наименование материала над рамкой по центру
+  var matName = (document.getElementById('materialName').value || '').replace(/\s+/g, ' ').trim();
+  if (matName) {
+    var mx = r(FRAME_W / 2);
+    d.push('0', 'TEXT', '8', '0', '62', 7, '7', 'SPDS',
+      '10', mx, '20', 5, '30', 0, '40', TH, '1', enc(matName),
+      '72', 1, '11', mx, '21', 5, '31', 0, '73', 2);
+  }
+
   var head = [
     '0','SECTION','2','HEADER','9','$ACADVER','1','AC1009','0','ENDSEC',
     '0','SECTION','2','TABLES',
@@ -346,7 +391,7 @@ function exportDXF() {
   var url = URL.createObjectURL(blob);
   var link = document.createElement('a');
   link.href = url;
-  link.download = 'cutting_map.dxf';
+  link.download = dxfFileName();
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -572,6 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('btnAddStock').onclick = function() { addStockRow(); };
   document.getElementById('btnAddPart').onclick = function() { addPartRow(); };
   document.getElementById('btnCalculate').onclick = calculate;
+  document.getElementById('btnClear').onclick = clearAll;
   var pasteBox = document.getElementById('pasteBox');
   pasteBox.addEventListener('paste', function() {
     setTimeout(function() { fillPartsFromText(pasteBox.value); }, 0);
