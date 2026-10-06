@@ -83,6 +83,46 @@ input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid #000; bo
 input[type="text"]:focus { outline: none; border: 2px solid #000; }
 .part-head-wrap { position: relative; }
 .part-head-wrap .btn-add { position: absolute; right: 0; bottom: 6px; }
+
+@media (max-width: 760px) { body { padding: 10px; } }
+.mobile h1 { font-size: 26px; line-height: 1.1; }
+.mobile .top-bar { flex-direction: column-reverse; align-items: stretch; gap: 8px; }
+.mobile .top-actions { justify-content: flex-end; margin-top: 0; }
+.mobile .subtitle { font-size: 15px; margin-bottom: 12px; }
+.mobile .card { padding: 14px; margin-bottom: 10px; }
+.mobile .card h3 { font-size: 18px; margin-bottom: 0; }
+.mobile .header-flex { flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.mobile label { font-size: 14px; }
+.mobile input[type="number"], .mobile input[type="text"] { font-size: 18px; padding: 8px 10px; min-width: 0; }
+.mobile .btn-add, .mobile .lang-btn { font-size: 16px; padding: 6px 12px; }
+.mobile .btn-remove { font-size: 16px; width: 32px; padding: 6px 0; }
+.mobile .btn-primary { font-size: 20px; padding: 12px; }
+.mobile .btn-export { font-size: 16px; padding: 10px 16px; }
+.mobile .stock-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px; gap: 6px; }
+.mobile .part-row, .mobile .part-head { grid-template-columns: 38px minmax(0, 1fr) minmax(0, 1fr) 32px; gap: 6px; }
+.mobile .part-head { font-size: 13px; }
+.mobile .pos-cell { font-size: 17px; padding: 6px 0; }
+.mobile .part-head-wrap { display: flex; flex-direction: column-reverse; }
+.mobile .part-head-wrap .btn-add { position: static; align-self: flex-end; margin-bottom: 8px; }
+.mobile #pasteBox { font-size: 15px; padding: 8px 10px; margin-bottom: 12px; }
+.mobile .stats-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.mobile .stat-box { padding: 8px 6px; }
+.mobile .stat-box .value { font-size: 34px; }
+.mobile .stat-box .label { font-size: 13px; }
+.mobile .stats-detail { font-size: 16px; line-height: 1.6; }
+.mobile .card.warning { font-size: 15px; padding: 12px; }
+.mobile .map-card { padding: 14px 12px 4px; }
+.mobile .m-head { font-size: 17px; margin: 14px 0 6px; }
+.mobile .m-line { font-size: 15px; margin: 2px 0; }
+.mobile .m-table { width: 100%; table-layout: fixed; margin: 4px 0 16px; }
+.mobile .m-table th, .mobile .m-table td { font-size: 13px; padding: 4px 3px; height: 34px; word-break: break-word; }
+.mobile .m-table th { height: 42px; }
+.mobile .m-grid { column-gap: 8px; row-gap: 12px; margin-bottom: 12px; }
+.mobile .m-grid .m-head { margin: 4px 0 -4px; }
+.mobile .m-count { font-size: 15px; }
+.mobile .map-card .m-row .stock-visual { height: 32px; }
+.mobile .stock-visual .segment { font-size: 12px; }
+.mobile .map-card .stock-visual .waste { font-size: 11px; -webkit-text-stroke: 5px #fff; }
 </style>
 </head>
 <body>
@@ -282,8 +322,14 @@ function clearAll() {
 }
 
 function exportDXF() {
-  var root = document.querySelector('.map-card');
-  if (!root) { alert(t('alertCalcFirst')); return; }
+  var src = document.querySelector('#results .map-card');
+  if (!src) { alert(t('alertCalcFirst')); return; }
+  // DXF строится по копии карты в «десктопной» вёрстке, чтобы результат не зависел от размера экрана
+  var box = document.createElement('div');
+  box.style.cssText = 'position: absolute; left: -20000px; top: 0; width: 1160px;';
+  var root = src.cloneNode(true);
+  box.appendChild(root);
+  document.body.appendChild(box);
   var r0 = root.getBoundingClientRect();
   var TH = 2.5;                    // высота текста, мм
   var FRAME_W = 175;               // ширина рамки в DXF, мм
@@ -396,6 +442,7 @@ function exportDXF() {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+  document.body.removeChild(box);
 }
 
 function fillPartsFromText(text) {
@@ -613,6 +660,10 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.lang-btn').forEach(function(b) {
     b.onclick = function() { setLang(b.getAttribute('data-lang')); };
   });
+  var cont = document.querySelector('.container');
+  function updMobile() { cont.classList.toggle('mobile', window.innerWidth < 760); }
+  updMobile();
+  window.addEventListener('resize', updMobile);
   applyLang();
   document.getElementById('btnAddStock').onclick = function() { addStockRow(); };
   document.getElementById('btnAddPart').onclick = function() { addPartRow(); };
