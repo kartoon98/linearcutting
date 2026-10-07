@@ -27,7 +27,7 @@ input[type="number"]:focus { outline: none; border: 2px solid #000; }
 .btn-remove { padding: 8px 10px; background: #fff; color: #000; border: 1px solid #000; border-radius: 0; font-size: 23px; cursor: pointer; width: 36px; font-weight: 700; }
 .btn-remove:hover { background: #000; color: #fff; }
 .part-row, .stock-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; margin-bottom: 10px; }
-.part-row, .part-head { grid-template-columns: 56px 1fr 1fr 36px; }
+.part-row, .part-head { grid-template-columns: 56px minmax(0, 1fr) minmax(0, 0.6fr) minmax(0, 0.55fr) 36px; }
 .part-row { align-items: stretch; }
 .part-row .btn-remove { align-self: stretch; }
 .part-head { display: grid; gap: 10px; font-size: 20px; color: #333; margin-bottom: 6px; }
@@ -72,7 +72,7 @@ input[type="number"]:focus { outline: none; border: 2px solid #000; }
 .paste-fix {}
 #pasteBox { width: 100%; padding: 10px 12px; border: 1px solid #000; border-radius: 0; font-family: inherit; font-size: 19px; color: #000; background: #fff; resize: vertical; margin-bottom: 28px; }
 #pasteBox:focus { outline: none; border: 2px solid #000; }
-.card.warning { border: 2px solid #e00000; color: #000; font-size: 19px; }
+.card.warning { border: 3px solid #e00000; color: #e00000; font-size: 28px; }
 .top-bar { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
 .lang-switch { display: flex; flex-shrink: 0; margin-top: 6px; }
 .lang-btn { padding: 8px 16px; background: #fff; color: #000; border: 1px solid #000; border-radius: 0; font-size: 23px; cursor: pointer; }
@@ -100,7 +100,7 @@ input[type="text"]:focus { outline: none; border: 2px solid #000; }
 .mobile .btn-primary { font-size: 20px; padding: 12px; }
 .mobile .btn-export { font-size: 16px; padding: 10px 16px; }
 .mobile .stock-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px; gap: 6px; }
-.mobile .part-row, .mobile .part-head { grid-template-columns: 38px minmax(0, 1fr) minmax(0, 1fr) 32px; gap: 6px; }
+.mobile .part-row, .mobile .part-head { grid-template-columns: 34px minmax(0, 1fr) minmax(0, 0.7fr) minmax(0, 0.8fr) 30px; gap: 5px; }
 .mobile .part-head { font-size: 13px; }
 .mobile .pos-cell { font-size: 17px; padding: 6px 0; }
 .mobile .part-head-wrap { display: flex; flex-direction: column-reverse; }
@@ -111,7 +111,7 @@ input[type="text"]:focus { outline: none; border: 2px solid #000; }
 .mobile .stat-box .value { font-size: 34px; }
 .mobile .stat-box .label { font-size: 13px; }
 .mobile .stats-detail { font-size: 16px; line-height: 1.6; }
-.mobile .card.warning { font-size: 15px; padding: 12px; }
+.mobile .card.warning { font-size: 20px; padding: 12px; }
 .mobile .map-card { padding: 14px 12px 4px; }
 .mobile .m-head { font-size: 17px; margin: 14px 0 6px; }
 .mobile .m-line { font-size: 15px; margin: 2px 0; }
@@ -125,6 +125,22 @@ input[type="text"]:focus { outline: none; border: 2px solid #000; }
 .mobile .stock-visual .segment { font-size: 12px; }
 .mobile .map-card .stock-visual .waste { font-size: 11px; -webkit-text-stroke: 5px #fff; }
 html.dark { background: #fff; filter: invert(1) hue-rotate(180deg); }
+#printTitle { display: none; }
+@page { size: A4 portrait; margin: 12mm; }
+@media print {
+  html.dark { filter: none !important; background: #fff; }
+  html, body { background: #fff; padding: 0; min-height: 0; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .container > :not(#results):not(#printTitle) { display: none !important; }
+  #results .no-export { display: none !important; }
+  .container { max-width: none; width: 1160px; zoom: 0.6; }
+  #printTitle { display: block; text-align: center; font-size: 36px; margin: 0 0 20px; }
+  #printTitle:empty { display: none; }
+  #results > .card:not(.map-card) { break-inside: avoid; }
+  .m-row, .m-table tr { break-inside: avoid; }
+  .m-head { break-after: avoid; }
+}
+.btn-export svg { width: 1.1em; height: 1.1em; vertical-align: -0.15em; margin-right: 8px; }
 </style>
 </head>
 <body>
@@ -165,7 +181,7 @@ html.dark { background: #fff; filter: invert(1) hue-rotate(180deg); }
     </div>
     <textarea id="pasteBox" rows="4" data-i18n-ph="pastePh" placeholder="Вставьте сюда строки из Excel: Поз. Длина Кол-во"></textarea>
     <div class="part-head-wrap">
-      <div class="part-head"><span data-i18n="hPos">Поз.</span><span data-i18n="hLen">Длина, мм</span><span data-i18n="hQty">Кол-во, шт</span><span></span></div>
+      <div class="part-head"><span data-i18n="hPos">Поз.</span><span data-i18n="hLen">Длина, мм</span><span data-i18n="hQty">Кол-во, шт</span><span data-i18n="hNote">Примечание</span><span></span></div>
       <button class="btn-add" id="btnAddPart" data-i18n="addPart">+ Деталь</button>
     </div>
     <div id="partsTable"></div>
@@ -183,6 +199,7 @@ html.dark { background: #fff; filter: invert(1) hue-rotate(180deg); }
 
   <button class="btn-primary" id="btnCalculate" data-i18n="calc">Рассчитать раскрой</button>
 
+  <div id="printTitle"></div>
   <div id="results"></div>
 </div>
 
@@ -192,13 +209,13 @@ var lastKerf = 0;
 
 var I18N = {
   ru: {
-    themeDark: 'Тёмная', themeLight: 'Светлая', clear: 'Очистить', materialName: 'Наименование материала',
+    hNote: 'Примечание', exportPdf: 'Печать', pdfSuffix: 'раскрой', themeDark: 'Тёмная', themeLight: 'Светлая', clear: 'Очистить', materialName: 'Наименование материала',
     title: 'Линейный раскрой материалов',
     subtitle: 'Введите параметры и нажмите «Рассчитать раскрой»',
     stocksTitle: 'Заготовки (разные длины)', addStock: '+ Заготовка',
     partsTitle: 'Детали для раскроя', addPart: '+ Деталь',
-    pasteLabel: 'Вставка из таблицы (Поз. / Длина / Кол-во)', fill: 'Заполнить',
-    pastePh: 'Вставьте сюда строки из Excel: Поз. Длина Кол-во',
+    pasteLabel: 'Вставка из таблицы (Поз. / Длина / Кол-во / Примечание)', fill: 'Заполнить',
+    pastePh: 'Вставьте сюда строки из Excel: Поз. Длина Кол-во Примечание',
     hPos: 'Поз.', hLen: 'Длина, мм', hQty: 'Кол-во, шт',
     params: 'Общие параметры', kerf: 'Толщина реза, мм', calc: 'Рассчитать раскрой',
     phStockLen: 'Длина заготовки, мм', phStockQty: 'Кол-во на складе',
@@ -217,13 +234,13 @@ var I18N = {
     scheme: 'Схема раскроя – {len} мм', exportBtn: '⬇ Скачать DXF'
   },
   en: {
-    themeDark: 'Dark', themeLight: 'Light', clear: 'Clear', materialName: 'Material name',
+    hNote: 'Note', exportPdf: 'Print', pdfSuffix: 'cutting', themeDark: 'Dark', themeLight: 'Light', clear: 'Clear', materialName: 'Material name',
     title: 'Linear cutting of materials',
     subtitle: 'Enter the parameters and press “Calculate cutting”',
     stocksTitle: 'Stock pieces (various lengths)', addStock: '+ Stock',
     partsTitle: 'Parts to cut', addPart: '+ Part',
-    pasteLabel: 'Paste from a table (Pos. / Length / Qty)', fill: 'Fill',
-    pastePh: 'Paste rows from Excel here: Pos. Length Qty',
+    pasteLabel: 'Paste from a table (Pos. / Length / Qty / Note)', fill: 'Fill',
+    pastePh: 'Paste rows from Excel here: Pos. Length Qty Note',
     hPos: 'Pos.', hLen: 'Length, mm', hQty: 'Qty, pcs',
     params: 'General parameters', kerf: 'Kerf (cut width), mm', calc: 'Calculate cutting',
     phStockLen: 'Stock length, mm', phStockQty: 'Qty in stock',
@@ -249,7 +266,8 @@ function t(k, o) {
   if (!o) return v;
   return v.replace(/\{(\w+)\}/g, function(m, key) { return o[key]; });
 }
-function nf(n) { return n.toLocaleString(lang === 'ru' ? 'ru-RU' : 'en-US'); }
+function escHtml(x) { return String(x || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function nf(n) { return String(n); }   // числа без разделителей разрядов
 
 function updateThemeBtn() {
   var dark = document.documentElement.classList.contains('dark');
@@ -302,7 +320,7 @@ function renumberParts() {
   for (var i = 0; i < cells.length; i++) cells[i].textContent = i + 1;
 }
 
-function addPartRow(len, qty, pos) {
+function addPartRow(len, qty, pos, note) {
   var id = Date.now() + Math.random();
   var row = document.createElement('div');
   row.id = 'part-row-' + id;
@@ -311,18 +329,42 @@ function addPartRow(len, qty, pos) {
     '<div class="pos-cell"></div>' +
     '<input type="number" class="part-len" placeholder="' + t('phPartLen') + '" value="' + (len || '') + '" min="1">' +
     '<input type="number" class="part-qty" placeholder="' + t('phPartQty') + '" value="' + (qty || '') + '" min="1">' +
+    '<input type="text" class="part-note" autocomplete="off">' +
     '<button class="btn-remove">✕</button>';
   document.getElementById('partsTable').appendChild(row);
   row.querySelector('.btn-remove').onclick = function() { row.remove(); renumberParts(); };
+  if (note) row.querySelector('.part-note').value = note;
   if (pos !== undefined && pos !== null) row.querySelector('.pos-cell').textContent = pos;
   else renumberParts();
 }
 
-function dxfFileName() {
-  var name = (document.getElementById('materialName').value || '').trim();
+function sanitizeName(name) {
+  name = (name || '').trim();
   name = name.replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').replace(/[. ]+$/, function(m) { return m.replace(/./g, '_'); });
   if (name.length > 120) name = name.slice(0, 120);
-  return (name || 'cutting_map') + '.dxf';
+  return name;
+}
+
+function dxfFileName() {
+  return (sanitizeName(document.getElementById('materialName').value) || 'cutting_map') + '.dxf';
+}
+
+function exportPDF() {
+  var raw = (document.getElementById('materialName').value || '').replace(/\s+/g, ' ').trim();
+  var cont = document.querySelector('.container');
+  var wasMobile = cont.classList.contains('mobile');
+  var oldTitle = document.title;
+  document.getElementById('printTitle').textContent = raw;
+  // имя файла при сохранении в PDF берётся из заголовка страницы
+  document.title = (sanitizeName(raw) || 'cutting_map') + ' (' + t('pdfSuffix') + ')';
+  cont.classList.remove('mobile');
+  var restore = function() {
+    document.title = oldTitle;
+    if (wasMobile) cont.classList.add('mobile');
+    window.removeEventListener('afterprint', restore);
+  };
+  window.addEventListener('afterprint', restore);
+  window.print();
 }
 
 function clearAll() {
@@ -465,17 +507,19 @@ function fillPartsFromText(text) {
   text.split(/\r?\n/).forEach(function(line) {
     if (!line.trim()) return;
     var cells = line.indexOf('\t') >= 0 ? line.split('\t') : (line.indexOf(';') >= 0 ? line.split(';') : line.trim().split(/\s+/));
+    var note = '', numCells = cells;
+    if (line.indexOf('\t') >= 0 && cells.length >= 4) { note = cells.slice(3).join(' ').trim(); numCells = cells.slice(0, 3); }
     var nums = [];
-    cells.forEach(function(c) {
+    numCells.forEach(function(c) {
       var digits = c.replace(/[^\d]/g, '');
       if (digits !== '') nums.push(parseInt(digits, 10));
     });
-    if (nums.length >= 3) rows.push({ pos: nums[0], len: nums[1], qty: nums[2] });
-    else if (nums.length === 2) rows.push({ pos: null, len: nums[0], qty: nums[1] });
+    if (nums.length >= 3) rows.push({ pos: nums[0], len: nums[1], qty: nums[2], note: note });
+    else if (nums.length === 2) rows.push({ pos: null, len: nums[0], qty: nums[1], note: note });
   });
   if (!rows.length) return false;
   document.getElementById('partsTable').innerHTML = '';
-  rows.forEach(function(r) { addPartRow(r.len, r.qty, r.pos); });
+  rows.forEach(function(r) { addPartRow(r.len, r.qty, r.pos, r.note); });
   if (rows.some(function(r) { return r.pos === null; })) renumberParts();
   return true;
 }
@@ -509,7 +553,7 @@ function calculate() {
     var len = parseInt(row.querySelector('.part-len').value);
     var qty = parseInt(row.querySelector('.part-qty').value);
     if (len && qty && len > 0 && qty > 0) {
-      partsList.push({ pos: pos, len: len, qty: qty });
+      partsList.push({ pos: pos, len: len, qty: qty, note: row.querySelector('.part-note').value.trim() });
       for (var j = 0; j < qty; j++) parts.push({ pos: pos, len: len });
     }
   }
@@ -637,7 +681,7 @@ function calculate() {
   html += '<div class="m-head">' + t('mapParts') + '</div>';
   html += '<table class="m-table"><thead><tr><th style="width: 12%">' + t('thPos') + '</th><th style="width: 29%">' + t('thLen') + '</th><th style="width: 29%">' + t('thQty') + '</th><th>' + t('thNote') + '</th></tr></thead><tbody>';
   partsList.forEach(function(p) {
-    html += '<tr><td>' + p.pos + '</td><td>' + p.len + '</td><td>' + p.qty + '</td><td></td></tr>';
+    html += '<tr><td>' + p.pos + '</td><td>' + p.len + '</td><td>' + p.qty + '</td><td>' + escHtml(p.note) + '</td></tr>';
   });
   html += '</tbody></table>';
   html += '<div class="m-grid">';
@@ -666,9 +710,10 @@ function calculate() {
   });
   html += '</div></div>';
 
-  html += '<div class="no-export" style="margin: 14px 0 20px;"><button class="btn-export" id="btnExportDXF">' + t('exportBtn') + '</button></div>';
+  html += '<div class="no-export" style="margin: 14px 0 20px; display: flex; flex-wrap: wrap; gap: 12px;"><button class="btn-export" id="btnExportDXF">' + t('exportBtn') + '</button><button class="btn-export" id="btnExportPDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="9"/><path d="M6 14h12v7H6z" fill="currentColor" fill-opacity="0.15"/></svg><span>' + t('exportPdf') + '</span></button></div>';
   document.getElementById('results').innerHTML = html;
   document.getElementById('btnExportDXF').onclick = exportDXF;
+  document.getElementById('btnExportPDF').onclick = exportPDF;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
