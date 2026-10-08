@@ -39,7 +39,7 @@ input[type="number"]:focus { outline: none; border: 2px solid #000; }
 .stock-visual { position: relative; height: 44px; background: #fff; border: 1px solid #000; margin-bottom: 10px; }
 .stock-visual .segment { position: absolute; height: 100%; display: flex; align-items: center; justify-content: center; color: #000; font-size: 23px; font-weight: 700; border-right: 1px solid #000; background: #fff; overflow: hidden; white-space: nowrap; }
 .stock-visual .segment:last-child { border-right: none; }
-.stock-visual .waste { position: absolute; right: 0; height: 100%; background: repeating-linear-gradient(45deg, #fff, #fff 3px, #ccc 3px, #ccc 6px); display: flex; align-items: center; justify-content: center; color: #000; font-size: 17px; font-weight: 600; border-left: 1px dashed #000; }
+.stock-visual .waste { position: absolute; right: 0; height: 100%; background: #fff; display: flex; align-items: center; justify-content: center; color: #000; font-size: 17px; font-weight: 600; border-left: 1px dashed #000; }
 .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .stats-detail { margin-top: 14px; padding-top: 14px; border-top: 1px solid #000; font-size: 23px; color: #000; line-height: 1.8; }
@@ -56,7 +56,7 @@ input[type="number"]:focus { outline: none; border: 2px solid #000; }
 .map-title { text-align: center; font-size: 34px; margin: 4px 0 18px; }
 .scheme-title { font-size: 26px; margin: 14px 0 10px; }
 .map-card .stock-visual { height: 44px; margin-bottom: 18px; }
-.map-card .stock-visual .waste { background: repeating-linear-gradient(135deg, #fff, #fff 5px, #000 5px, #000 6px); border-left: 1px solid #000; paint-order: stroke fill; -webkit-text-stroke: 8px #fff; }
+.map-card .stock-visual .waste { background: #fff; border-left: 1px solid #000; paint-order: stroke fill; -webkit-text-stroke: 8px #fff; }
 .map-card { padding: 24px 28px 8px; }
 .m-head { font-size: 26px; margin: 22px 0 8px; }
 .m-head:first-child { margin-top: 0; }
@@ -151,6 +151,10 @@ html.dark { background: #fff; filter: invert(1) hue-rotate(180deg); }
 @media print { .incl { display: none !important; } .summary-card.print-hide { display: none !important; } }
 .kerf-box { width: 25%; min-width: 140px; }
 .mobile .kerf-box { width: 50%; }
+.map-card .stock-visual .waste { background: #fff; paint-order: normal; -webkit-text-stroke: 0; }
+.mobile .map-card .stock-visual .waste { -webkit-text-stroke: 0; }
+.waste .hatch { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
+.waste-label { position: relative; z-index: 1; background: #fff; padding: 0 4px; line-height: 1.1; }
 </style>
 </head>
 <body>
@@ -217,7 +221,13 @@ function resetResults() {
   document.getElementById('results').innerHTML = '';
   lastPatterns = [];
 }
-var includeSummary = false;   // добавлять итоги раскроя в PDF и DXF
+var includeSummary = false;
+// штриховка остатка: обычные линии под 45° (в PDF с телефона градиент рисовался некорректно)
+var HATCH_SVG = (function() {
+  var p = '';
+  for (var x = -64; x <= 1300; x += 8.49) p += 'M' + x.toFixed(2) + ' 64L' + (x + 64).toFixed(2) + ' 0';
+  return '<svg class="hatch" width="100%" height="100%" aria-hidden="true"><path d="' + p + '" stroke="#000" stroke-width="1" fill="none"/></svg>';
+})();   // добавлять итоги раскроя в PDF и DXF
 
 var I18N = {
   ru: {
@@ -371,7 +381,7 @@ function sanitizeName(name) {
 }
 
 function dxfFileName() {
-  return (sanitizeName(document.getElementById('materialName').value) || 'cutting_map') + '.dxf';
+  return (sanitizeName(document.getElementById('materialName').value) || 'cutting_map') + ' (' + t('pdfSuffix') + ').dxf';
 }
 
 function exportPDF() {
@@ -498,7 +508,7 @@ function exportDXF() {
     var rr = rg.getBoundingClientRect();
     if (!rr.width) continue;
     var pcs = getComputedStyle(p);
-    var al = (pcs.textAlign === 'center' || pcs.justifyContent === 'center') ? 1 : (pcs.textAlign === 'right' ? 2 : 0);
+    var al = (pcs.textAlign === 'center' || pcs.justifyContent === 'center' || p.classList.contains('waste-label')) ? 1 : (pcs.textAlign === 'right' ? 2 : 0);
     var px = al === 1 ? nx((rr.left + rr.right) / 2) : (al === 2 ? nx(rr.right) : nx(rr.left));
     var py = ny((rr.top + rr.bottom) / 2);
     d.push('0', 'TEXT', '8', '0', '62', 7, '7', 'SPDS',
@@ -742,7 +752,7 @@ function calculate() {
         offset += runW + kerf;
         pIdx += cnt;
       }
-      if (waste > 0) html += '<div class="waste" style="width: ' + (waste / pat.stockLen * 100) + '%;">' + waste + '</div>';
+      if (waste > 0) html += '<div class="waste" style="width: ' + (waste / pat.stockLen * 100) + '%;">' + HATCH_SVG + '<span class="waste-label">' + waste + '</span></div>';
       html += '</div></div>';
     });
   });
