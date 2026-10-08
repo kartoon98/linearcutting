@@ -135,13 +135,22 @@ html.dark { background: #fff; filter: invert(1) hue-rotate(180deg); }
   .container > :not(#results):not(#printTitle) { display: none !important; }
   #results .no-export { display: none !important; }
   .container { max-width: none; width: 1160px; zoom: 0.6; }
-  #printTitle { display: block; text-align: center; font-size: 36px; margin: 0 0 20px; }
+  #printTitle { display: block; text-align: left; font-size: 36px; margin: 0 0 20px; }
   #printTitle:empty { display: none; }
   #results > .card:not(.map-card) { break-inside: avoid; }
   .m-row, .m-table tr { break-inside: avoid; }
   .m-head { break-after: avoid; }
 }
 .btn-export svg { width: 1.1em; height: 1.1em; vertical-align: -0.15em; margin-right: 8px; }
+.sum-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.sum-head h3 { margin: 0; }
+.incl { display: flex; align-items: center; gap: 10px; font-size: 20px; cursor: pointer; margin: 0; color: #000; }
+.incl input { width: 26px; height: 26px; margin: 0; accent-color: #000; cursor: pointer; }
+.mobile .incl { font-size: 14px; gap: 8px; }
+.mobile .incl input { width: 22px; height: 22px; }
+@media print { .incl { display: none !important; } .summary-card.print-hide { display: none !important; } }
+.kerf-box { width: 25%; min-width: 140px; }
+.mobile .kerf-box { width: 50%; }
 </style>
 </head>
 <body>
@@ -189,12 +198,9 @@ html.dark { background: #fff; filter: invert(1) hue-rotate(180deg); }
   </div>
 
   <div class="card">
-    <h3 data-i18n="params">Общие параметры</h3>
-    <div class="grid-2">
-      <div>
-        <label data-i18n="kerf">Толщина реза, мм</label>
-        <input type="number" id="kerf" value="5" min="0">
-      </div>
+    <h3 data-i18n="kerf">Толщина реза, мм</h3>
+    <div class="kerf-box">
+      <input type="number" id="kerf" value="5" min="0">
     </div>
   </div>
 
@@ -207,10 +213,15 @@ html.dark { background: #fff; filter: invert(1) hue-rotate(180deg); }
 <script>
 var lastPatterns = [];
 var lastKerf = 0;
+function resetResults() {
+  document.getElementById('results').innerHTML = '';
+  lastPatterns = [];
+}
+var includeSummary = false;   // добавлять итоги раскроя в PDF и DXF
 
 var I18N = {
   ru: {
-    hNote: 'Примечание', exportPdf: 'Печать', pdfSuffix: 'раскрой', themeDark: 'Тёмная', themeLight: 'Светлая', clear: 'Очистить', materialName: 'Наименование материала',
+    inclSummary: 'Показать в файле отчета', hNote: 'Примечание', exportPdf: 'Печать', pdfSuffix: 'раскрой', themeDark: 'Тёмная', themeLight: 'Светлая', clear: 'Очистить', materialName: 'Наименование материала',
     title: 'Линейный раскрой материалов',
     subtitle: 'Введите параметры и нажмите «Рассчитать раскрой»',
     stocksTitle: 'Заготовки (разные длины)', addStock: '+ Заготовка',
@@ -235,7 +246,7 @@ var I18N = {
     scheme: 'Схема раскроя – {len} мм', exportBtn: '⬇ Скачать DXF'
   },
   en: {
-    hNote: 'Note', exportPdf: 'Print', pdfSuffix: 'cutting', themeDark: 'Dark', themeLight: 'Light', clear: 'Clear', materialName: 'Material name',
+    inclSummary: 'Show in report file', hNote: 'Note', exportPdf: 'Print', pdfSuffix: 'cutting', themeDark: 'Dark', themeLight: 'Light', clear: 'Clear', materialName: 'Material name',
     title: 'Linear cutting of materials',
     subtitle: 'Enter the parameters and press “Calculate cutting”',
     stocksTitle: 'Stock pieces (various lengths)', addStock: '+ Stock',
@@ -325,7 +336,7 @@ function addStockRow(len, qty) {
     '<button class="btn-remove">✕</button>';
   row.querySelectorAll('input').forEach(hardenInput);
   document.getElementById('stocksTable').appendChild(row);
-  row.querySelector('.btn-remove').onclick = function() { row.remove(); };
+  row.querySelector('.btn-remove').onclick = function() { row.remove(); resetResults(); };
 }
 
 function renumberParts() {
@@ -346,7 +357,7 @@ function addPartRow(len, qty, pos, note) {
     '<button class="btn-remove">✕</button>';
   row.querySelectorAll('input').forEach(hardenInput);
   document.getElementById('partsTable').appendChild(row);
-  row.querySelector('.btn-remove').onclick = function() { row.remove(); renumberParts(); };
+  row.querySelector('.btn-remove').onclick = function() { row.remove(); renumberParts(); resetResults(); };
   if (note) row.querySelector('.part-note').value = note;
   if (pos !== undefined && pos !== null) row.querySelector('.pos-cell').textContent = pos;
   else renumberParts();
@@ -398,7 +409,17 @@ function exportDXF() {
   // DXF строится по копии карты в «десктопной» вёрстке, чтобы результат не зависел от размера экрана
   var box = document.createElement('div');
   box.style.cssText = 'position: absolute; left: -20000px; top: 0; width: 1160px;';
-  var root = src.cloneNode(true);
+  var root = document.createElement('div');
+  if (includeSummary) {
+    var sum = document.querySelector('#results .summary-card');
+    if (sum) {
+      var sc = sum.cloneNode(true);
+      var ic = sc.querySelector('.incl');
+      if (ic) ic.parentNode.removeChild(ic);
+      root.appendChild(sc);
+    }
+  }
+  root.appendChild(src.cloneNode(true));
   box.appendChild(root);
   document.body.appendChild(box);
   var r0 = root.getBoundingClientRect();
@@ -488,10 +509,10 @@ function exportDXF() {
   // наименование материала над рамкой по центру
   var matName = (document.getElementById('materialName').value || '').replace(/\s+/g, ' ').trim();
   if (matName) {
-    var mx = r(FRAME_W / 2);
+    var mx = 0;   // по левому краю рамки
     d.push('0', 'TEXT', '8', '0', '62', 7, '7', 'SPDS',
       '10', mx, '20', 5, '30', 0, '40', TH, '1', enc(matName),
-      '72', 1, '11', mx, '21', 5, '31', 0, '73', 2);
+      '72', 0, '11', mx, '21', 5, '31', 0, '73', 2);
   }
 
   var head = [
@@ -533,6 +554,7 @@ function fillPartsFromText(text) {
   });
   if (!rows.length) return false;
   document.getElementById('partsTable').innerHTML = '';
+  resetResults();
   rows.forEach(function(r) { addPartRow(r.len, r.qty, r.pos, r.note); });
   if (rows.some(function(r) { return r.pos === null; })) renumberParts();
   return true;
@@ -663,7 +685,9 @@ function calculate() {
   });
   lastPatterns = patterns;
 
-  var html = '<div class="card"><h3>' + t('summary') + '</h3><div class="stats-grid">';
+  var html = '<div class="card summary-card' + (includeSummary ? '' : ' print-hide') + '">' +
+    '<div class="sum-head"><h3>' + t('summary') + '</h3><label class="incl"><span>' + t('inclSummary') + '</span><input type="checkbox" id="chkSummary"' + (includeSummary ? ' checked' : '') + '></label></div>' +
+    '<div class="stats-grid">';
   html += '<div class="stat-box"><div class="value">' + usedStocks.length + '</div><div class="label">' + t('stocksUsed') + '</div></div>';
   html += '<div class="stat-box"><div class="value">' + usePercent + '%</div><div class="label">' + t('utilization') + '</div></div>';
   html += '</div><div class="stats-detail">';
@@ -728,6 +752,14 @@ function calculate() {
   document.getElementById('results').innerHTML = html;
   document.getElementById('btnExportDXF').onclick = exportDXF;
   document.getElementById('btnExportPDF').onclick = exportPDF;
+  var chk = document.getElementById('chkSummary');
+  if (chk) {
+    hardenInput(chk);
+    chk.onchange = function() {
+      includeSummary = chk.checked;
+      document.querySelector('#results .summary-card').classList.toggle('print-hide', !includeSummary);
+    };
+  }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -744,6 +776,10 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('btnAddPart').onclick = function() { addPartRow(); };
   document.getElementById('btnCalculate').onclick = calculate;
   document.getElementById('btnClear').onclick = clearAll;
+  // любое изменение значений заготовок, деталей или толщины реза сбрасывает рассчитанный раскрой
+  document.addEventListener('input', function(e) {
+    if (e.target.closest && e.target.closest('#stocksTable, #partsTable, #kerf')) resetResults();
+  });
   document.getElementById('btnTheme').onclick = toggleTheme;
   var pasteBox = document.getElementById('pasteBox');
   pasteBox.addEventListener('paste', function() {
