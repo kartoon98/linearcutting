@@ -66,9 +66,9 @@ input[type="number"]:focus { outline: none; border: 2px solid #000; }
 .m-row { display: contents; }
 .m-count { font-size: 24px; text-align: left; }
 .map-card .m-row .stock-visual { height: 44px; margin: 0; }
-.m-table { width: 62%; border-collapse: separate; border-spacing: 0; border-right: 1px solid #000; border-bottom: 1px solid #000; margin: 6px 0 26px; }
-.m-table th, .m-table td { border-top: 1px solid #000; border-left: 1px solid #000; padding: 10px 8px; text-align: center; font-size: 23px; height: 48px; }
-.m-table th { height: 62px; }
+.m-table { width: 62%; border-collapse: separate; border-spacing: 0; margin: 6px 0 26px; }
+.m-table th, .m-table td { border-top: 1px solid #000; border-left: 1px solid #000; padding: 7px 8px; text-align: center; font-size: 23px; height: 43px; }
+.m-table th { height: 56px; }
 .unplaced, .unplaced b { color: #e00000; }
 .paste-fix {}
 #pasteBox { width: 100%; padding: 10px 12px; border: 1px solid #000; border-radius: 0; font-family: inherit; font-size: 19px; color: #000; background: #fff; resize: vertical; margin-bottom: 28px; }
@@ -117,8 +117,8 @@ input[type="text"]:focus { outline: none; border: 2px solid #000; }
 .mobile .m-head { font-size: 17px; margin: 14px 0 6px; }
 .mobile .m-line { font-size: 15px; margin: 2px 0; }
 .mobile .m-table { width: 100%; table-layout: fixed; margin: 4px 0 16px; }
-.mobile .m-table th, .mobile .m-table td { font-size: 13px; padding: 4px 3px; height: 34px; word-break: break-word; }
-.mobile .m-table th { height: 42px; }
+.mobile .m-table th, .mobile .m-table td { font-size: 13px; padding: 3px 3px; height: 31px; word-break: break-word; }
+.mobile .m-table th { height: 38px; }
 .mobile .m-grid { column-gap: 8px; row-gap: 12px; margin-bottom: 12px; }
 .mobile .m-grid .m-head { margin: 4px 0 -4px; }
 .mobile .m-count { font-size: 15px; }
@@ -155,6 +155,13 @@ html.dark { background: #fff; filter: invert(1) hue-rotate(180deg); }
 .mobile .map-card .stock-visual .waste { -webkit-text-stroke: 0; }
 .waste .hatch { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
 .waste-label { position: relative; z-index: 1; background: #fff; padding: 0 4px; line-height: 1.1; }
+input[type="number"], input[type="text"], #pasteBox { background: #e2e2e2; }
+.m-table th:last-child, .m-table td:last-child { border-right: 1px solid #000; }
+.m-table tr:last-child td { border-bottom: 0; }
+.m-table .total-row td { border-left: 0; border-bottom: 0; border-right: 0; }
+.m-table .total-row td:nth-child(2) { border: 1px solid #000; border-right: 0; }
+.m-table .total-row td:last-child { border-left: 1px solid #000; }
+.m-table td.total-label { text-align: right; padding-right: 14px; }
 </style>
 </head>
 <body>
@@ -231,7 +238,7 @@ var HATCH_SVG = (function() {
 
 var I18N = {
   ru: {
-    inclSummary: 'Показать в файле отчета', hNote: 'Примечание', exportPdf: 'Печать', pdfSuffix: 'раскрой', themeDark: 'Тёмная', themeLight: 'Светлая', clear: 'Очистить', materialName: 'Наименование материала',
+    total: 'Всего:', inclSummary: 'Показать в файле отчета', hNote: 'Примечание', exportPdf: 'Печать', pdfSuffix: 'раскрой', themeDark: 'Тёмная', themeLight: 'Светлая', clear: 'Очистить', materialName: 'Наименование материала',
     title: 'Линейный раскрой материалов',
     subtitle: 'Введите параметры и нажмите «Рассчитать раскрой»',
     stocksTitle: 'Заготовки (разные длины)', addStock: '+ Заготовка',
@@ -256,7 +263,7 @@ var I18N = {
     scheme: 'Схема раскроя – {len} мм', exportBtn: '⬇ Скачать DXF'
   },
   en: {
-    inclSummary: 'Show in report file', hNote: 'Note', exportPdf: 'Print', pdfSuffix: 'cutting', themeDark: 'Dark', themeLight: 'Light', clear: 'Clear', materialName: 'Material name',
+    total: 'Total:', inclSummary: 'Show in report file', hNote: 'Note', exportPdf: 'Print', pdfSuffix: 'cutting', themeDark: 'Dark', themeLight: 'Light', clear: 'Clear', materialName: 'Material name',
     title: 'Linear cutting of materials',
     subtitle: 'Enter the parameters and press “Calculate cutting”',
     stocksTitle: 'Stock pieces (various lengths)', addStock: '+ Stock',
@@ -731,6 +738,9 @@ function calculate() {
   partsList.forEach(function(p) {
     html += '<tr><td>' + p.pos + '</td><td>' + p.len + '</td><td>' + p.qty + '</td><td>' + escHtml(p.note) + '</td></tr>';
   });
+  var totalQty = 0;
+  partsList.forEach(function(p) { totalQty += p.qty; });
+  html += '<tr class="total-row"><td class="total-label" colspan="2">' + t('total') + '</td><td>' + totalQty + '</td><td></td></tr>';
   html += '</tbody></table>';
   html += '<div class="m-grid">';
   groups.forEach(function(g) {
