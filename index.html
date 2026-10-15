@@ -514,20 +514,44 @@ function buildDrawing() {
     }
   }
 
+  // Текст собирается по блокам: все узлы строки (включая вложенные <b>/<span>) идут одним TEXT,
+  // иначе подпись и значение («Деталей размещено:» и «48 из 48 шт») накладываются друг на друга
+  function blockOf(node) {
+    var el = node.parentElement;
+    while (el && el !== root && getComputedStyle(el).display === 'inline') el = el.parentElement;
+    return el || root;
+  }
+  var done = new Set();
   var tw2 = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   var n;
   while ((n = tw2.nextNode())) {
-    var txt = n.nodeValue.replace(/\s+/g, ' ').trim();   // одна строка, без переносов
-    if (!txt) continue;
-    var p = n.parentElement;
-    var rg = document.createRange();
-    rg.selectNodeContents(n);
-    var rr = rg.getBoundingClientRect();
-    if (!rr.width) continue;
-    var pcs = getComputedStyle(p);
-    var al = (pcs.textAlign === 'center' || pcs.justifyContent === 'center' || p.classList.contains('waste-label')) ? 1 : (pcs.textAlign === 'right' ? 2 : 0);
-    var px = al === 1 ? nx((rr.left + rr.right) / 2) : (al === 2 ? nx(rr.right) : nx(rr.left));
-    var py = ny((rr.top + rr.bottom) / 2);
+    if (!n.nodeValue.trim()) continue;
+    var B = blockOf(n);
+    if (done.has(B)) continue;
+    done.add(B);
+    var parts = [], left = Infinity, right = -Infinity, firstRect = null;
+    var tw3 = document.createTreeWalker(B, NodeFilter.SHOW_TEXT);
+    var m3;
+    while ((m3 = tw3.nextNode())) {
+      if (blockOf(m3) !== B) continue;
+      parts.push(m3.nodeValue);
+      if (m3.nodeValue.trim()) {
+        var rg = document.createRange();
+        rg.selectNodeContents(m3);
+        var q = rg.getBoundingClientRect();
+        if (q.width) {
+          if (!firstRect) firstRect = q;
+          left = Math.min(left, q.left);
+          right = Math.max(right, q.right);
+        }
+      }
+    }
+    var txt = parts.join('').replace(/\s+/g, ' ').trim();   // одна строка, без переносов
+    if (!txt || !firstRect) continue;
+    var pcs = getComputedStyle(B);
+    var al = (pcs.textAlign === 'center' || pcs.justifyContent === 'center' || B.classList.contains('waste-label')) ? 1 : (pcs.textAlign === 'right' ? 2 : 0);
+    var px = al === 1 ? nx((left + right) / 2) : (al === 2 ? nx(right) : nx(left));
+    var py = ny((firstRect.top + firstRect.bottom) / 2);
     G.texts.push({ x: px, y: py, al: al, text: txt });
     d.push('0', 'TEXT', '8', '0', '62', 7, '7', 'CS_GOST2304',
       '10', px, '20', py, '30', 0, '40', TH, '1', enc(txt),
