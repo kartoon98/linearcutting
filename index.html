@@ -526,7 +526,7 @@ function buildDrawing() {
     var px = al === 1 ? nx((rr.left + rr.right) / 2) : (al === 2 ? nx(rr.right) : nx(rr.left));
     var py = ny((rr.top + rr.bottom) / 2);
     G.texts.push({ x: px, y: py, al: al, text: txt });
-    d.push('0', 'TEXT', '8', '0', '62', 7, '7', 'CS_GOST2304A',
+    d.push('0', 'TEXT', '8', '0', '62', 7, '7', 'CS_GOST2304',
       '10', px, '20', py, '30', 0, '40', TH, '1', enc(txt),
       '72', al, '11', px, '21', py, '31', 0, '73', 2);
   }
@@ -536,7 +536,7 @@ function buildDrawing() {
   if (matName) {
     var mx = 0;   // по левому краю рамки
     G.texts.push({ x: 0, y: 5, al: 0, text: matName });
-    d.push('0', 'TEXT', '8', '0', '62', 7, '7', 'CS_GOST2304A',
+    d.push('0', 'TEXT', '8', '0', '62', 7, '7', 'CS_GOST2304',
       '10', mx, '20', 5, '30', 0, '40', TH, '1', enc(matName),
       '72', 0, '11', mx, '21', 5, '31', 0, '73', 2);
   }
@@ -546,7 +546,7 @@ function buildDrawing() {
     '0','SECTION','2','TABLES',
     '0','TABLE','2','LAYER','70',1,'0','LAYER','2','0','70',0,'62',7,'6','CONTINUOUS','0','ENDTAB',
     '0','TABLE','2','STYLE','70',1,
-    '0','STYLE','2','CS_GOST2304A','70',0,'40',0,'41',1,'50',0,'71',0,'42',2.5,'3','CS_Gost2304A.shx','4','',
+    '0','STYLE','2','CS_GOST2304','70',0,'40',0,'41',1,'50',0,'71',0,'42',2.5,'3','CS_Gost2304.shx','4','',
     '0','ENDTAB',
     '0','ENDSEC','0','SECTION','2','ENTITIES'
   ];
@@ -590,7 +590,7 @@ function makeLisp(g) {
   if (!isFinite(by)) by = 0;
   out.push('(progn');
   out.push('(setq lc_last (entlast))');
-  out.push('(if (not (tblsearch "STYLE" "CS_GOST2304A")) (entmake \'((0 . "STYLE") (100 . "AcDbSymbolTableRecord") (100 . "AcDbTextStyleTableRecord") (2 . "CS_GOST2304A") (70 . 0) (40 . 0.0) (41 . 1.0) (50 . 0.0) (71 . 0) (42 . 2.5) (3 . "CS_Gost2304A.shx") (4 . ""))))');
+  out.push('(if (not (tblsearch "STYLE" "CS_GOST2304")) (entmake \'((0 . "STYLE") (100 . "AcDbSymbolTableRecord") (100 . "AcDbTextStyleTableRecord") (2 . "CS_GOST2304") (70 . 0) (40 . 0.0) (41 . 1.0) (50 . 0.0) (71 . 0) (42 . 2.5) (3 . "CS_Gost2304.shx") (4 . ""))))');
   out.push('(foreach l \'(');
   var row = [];
   g.lines.forEach(function(l, i) {
@@ -605,7 +605,7 @@ function makeLisp(g) {
     out.push('(' + lispNum(tx.x) + ' ' + lispNum(tx.y) + ' ' + tx.al + ' "' + lispStr(tx.text) + '")');
   });
   out.push(')');
-  out.push('(entmake (list \'(0 . "TEXT") (list 10 (nth 0 tx) (nth 1 tx) 0.0) \'(40 . 2.5) (cons 1 (nth 3 tx)) \'(7 . "CS_GOST2304A") (cons 72 (nth 2 tx)) (list 11 (nth 0 tx) (nth 1 tx) 0.0) \'(73 . 2))))');
+  out.push('(entmake (list \'(0 . "TEXT") (list 10 (nth 0 tx) (nth 1 tx) 0.0) \'(40 . 2.5) (cons 1 (nth 3 tx)) \'(7 . "CS_GOST2304") (cons 72 (nth 2 tx)) (list 11 (nth 0 tx) (nth 1 tx) 0.0) \'(73 . 2))))');
   out.push('(setq lc_ss (ssadd))');
   out.push('(setq lc_e (if lc_last (entnext lc_last) (entnext)))');
   out.push('(while lc_e (ssadd lc_e lc_ss) (setq lc_e (entnext lc_e)))');
