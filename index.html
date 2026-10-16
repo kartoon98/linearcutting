@@ -449,6 +449,7 @@ function buildDrawing() {
   document.body.appendChild(box);
   var r0 = root.getBoundingClientRect();
   var TH = 2.5;                    // высота текста, мм
+  var NAME_TH = 3.5;               // высота названия материала, мм
   var FRAME_W = 175;               // ширина рамки в DXF, мм
   var k = FRAME_W / r0.width;      // коэффициент: пиксели экрана -> мм чертежа
   var d = [];
@@ -552,7 +553,7 @@ function buildDrawing() {
     var al = (pcs.textAlign === 'center' || pcs.justifyContent === 'center' || B.classList.contains('waste-label')) ? 1 : (pcs.textAlign === 'right' ? 2 : 0);
     var px = al === 1 ? nx((left + right) / 2) : (al === 2 ? nx(right) : nx(left));
     var py = ny((firstRect.top + firstRect.bottom) / 2);
-    G.texts.push({ x: px, y: py, al: al, text: txt });
+    G.texts.push({ x: px, y: py, al: al, text: txt, h: TH });
     d.push('0', 'TEXT', '8', '0', '62', 7, '7', 'CS_GOST2304',
       '10', px, '20', py, '30', 0, '40', TH, '1', enc(txt),
       '72', al, '11', px, '21', py, '31', 0, '73', 2);
@@ -562,9 +563,9 @@ function buildDrawing() {
   var matName = (document.getElementById('materialName').value || '').replace(/\s+/g, ' ').trim();
   if (matName) {
     var mx = 0;   // по левому краю рамки
-    G.texts.push({ x: 0, y: 5, al: 0, text: matName });
+    G.texts.push({ x: 0, y: 5, al: 0, text: matName, h: NAME_TH });
     d.push('0', 'TEXT', '8', '0', '62', 7, '7', 'CS_GOST2304',
-      '10', mx, '20', 5, '30', 0, '40', TH, '1', enc(matName),
+      '10', mx, '20', 5, '30', 0, '40', NAME_TH, '1', enc(matName),
       '72', 0, '11', mx, '21', 5, '31', 0, '73', 2);
   }
 
@@ -629,10 +630,10 @@ function makeLisp(g) {
   out.push('(entmake (list \'(0 . "LINE") (list 10 (nth 0 l) (nth 1 l) 0.0) (list 11 (nth 2 l) (nth 3 l) 0.0))))');
   out.push('(foreach tx \'(');
   g.texts.forEach(function(tx) {
-    out.push('(' + lispNum(tx.x) + ' ' + lispNum(tx.y) + ' ' + tx.al + ' "' + lispStr(tx.text) + '")');
+    out.push('(' + lispNum(tx.x) + ' ' + lispNum(tx.y) + ' ' + tx.al + ' "' + lispStr(tx.text) + '" ' + lispNum(tx.h) + ')');
   });
   out.push(')');
-  out.push('(entmake (list \'(0 . "TEXT") (list 10 (nth 0 tx) (nth 1 tx) 0.0) \'(40 . 2.5) (cons 1 (nth 3 tx)) \'(7 . "CS_GOST2304") (cons 72 (nth 2 tx)) (list 11 (nth 0 tx) (nth 1 tx) 0.0) \'(73 . 2))))');
+  out.push('(entmake (list \'(0 . "TEXT") (list 10 (nth 0 tx) (nth 1 tx) 0.0) (cons 40 (nth 4 tx)) (cons 1 (nth 3 tx)) \'(7 . "CS_GOST2304") (cons 72 (nth 2 tx)) (list 11 (nth 0 tx) (nth 1 tx) 0.0) \'(73 . 2))))');
   out.push('(setq lc_ss (ssadd))');
   out.push('(setq lc_e (if lc_last (entnext lc_last) (entnext)))');
   out.push('(while lc_e (ssadd lc_e lc_ss) (setq lc_e (entnext lc_e)))');
