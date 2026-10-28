@@ -364,6 +364,16 @@ function addStockRow(len, qty) {
   row.querySelector('.btn-remove').onclick = function() { row.remove(); resetResults(); };
 }
 
+// как только в последней строке деталей заполнены длина и количество, добавляется следующая пустая строка
+function ensureTrailingRow() {
+  var rows = document.querySelectorAll('#partsTable .part-row');
+  if (!rows.length) return;
+  var last = rows[rows.length - 1];
+  var l = parseInt(last.querySelector('.part-len').value);
+  var q = parseInt(last.querySelector('.part-qty').value);
+  if (l > 0 && q > 0) addPartRow();
+}
+
 function renumberParts() {
   var cells = document.querySelectorAll('#partsTable .pos-cell');
   for (var i = 0; i < cells.length; i++) cells[i].textContent = i + 1;
@@ -703,6 +713,7 @@ function fillPartsFromText(text) {
   resetResults();
   rows.forEach(function(r) { addPartRow(r.len, r.qty, null, r.note); });
   renumberParts();
+  ensureTrailingRow();
   return true;
 }
 
@@ -929,6 +940,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // любое изменение значений заготовок, деталей или толщины реза сбрасывает рассчитанный раскрой
   document.addEventListener('input', function(e) {
     if (e.target.closest && e.target.closest('#stocksTable, #partsTable, #kerf')) resetResults();
+    if (e.target.classList && (e.target.classList.contains('part-len') || e.target.classList.contains('part-qty'))) ensureTrailingRow();
   });
   document.getElementById('btnTheme').onclick = toggleTheme;
   var pasteBox = document.getElementById('pasteBox');
@@ -943,6 +955,7 @@ document.addEventListener('DOMContentLoaded', function() {
   addPartRow(1500, 40);
   addPartRow(1200, 30);
   addPartRow(1100, 20);
+  ensureTrailingRow();
 });
 </script>
 </body>
